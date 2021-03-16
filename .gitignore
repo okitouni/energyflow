@@ -1,0 +1,8 @@
+*/__pycache__/*
+Untitled.ipynb
+.ipynb_checkpoints/
+.vscode/
+*.swp
+*.pyc
+**/*.txt
+**/*.out
