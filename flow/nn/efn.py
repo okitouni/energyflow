@@ -30,3 +30,9 @@ class EFN(Module):
       #  x = p*x
       #  x = global_add_pool(x,batch)
         return x
+
+class EFN2(Module):
+    def __init__(self, nn):
+        super().__init__()
+        self.ptconv = PTConv(nn=nn, aggr='add').jittable()
+    
