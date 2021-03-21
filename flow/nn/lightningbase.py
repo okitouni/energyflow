@@ -2,7 +2,7 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import accuracy
 
-class Model(pl.LightningModule):
+class LightningModel(pl.LightningModule):
     def __init__(self, model, criterion=None, lr=1e-3, optim=None,data_cov=None,zeroparams=None):
         super().__init__()
         self.model = model

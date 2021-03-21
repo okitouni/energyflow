@@ -1,5 +1,5 @@
-from .lightningbase import Model
+from .lightningbase import LightningModel
 from .ptconv import PTConv
-from .efn import EFN
+from .efn import EFN, EFNtoGlobal, EFNtoSegment
 from .losses import PTLoss
-__all__ = ["Model", "PTConv", "EFN","PTLoss"] 
+__all__ = ["LightningModel", "PTConv", "EFN", "EFNtoGlobal", "EFNtoSegment", "PTLoss"]

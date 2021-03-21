@@ -3,6 +3,7 @@ lightning_logs/*
 data/*
 Untitled.ipynb
 .ipynb_checkpoints/
+.idea/
 .vscode/
 *.swp
 *.swo
