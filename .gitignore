@@ -3,6 +3,7 @@ Untitled.ipynb
 .ipynb_checkpoints/
 .vscode/
 *.swp
+*.swo
 *.pyc
 **/*.txt
 **/*.out

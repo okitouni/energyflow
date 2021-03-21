@@ -3,13 +3,13 @@ import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import accuracy
 
 class Model(pl.LightningModule):
-    def __init__(self, model, criterion=None, lr=1e-3, optim="Adam",data_cov=None,zeroparams=None):
+    def __init__(self, model, criterion=None, lr=1e-3, optim=None,data_cov=None,zeroparams=None):
         super().__init__()
         self.model = model
         self.Loss = criterion if criterion is not None else torch.nn.MSELoss() 
         self.optim = optim
         self.zeroparams = zeroparams
-        if optim == "Adam":
+        if optim is None:
             self.lr = lr
         else:
             self.lr = self.optim.defaults["lr"]
@@ -22,11 +22,11 @@ class Model(pl.LightningModule):
         self.hparams["model"] = self.model.__repr__().replace("\n", "")
         self.hparams["lr"] = self.lr
 
-    def forward(self, x):
-        return self.model(x)
+    def forward(self, batch):
+        return self.model(batch)
 
     def training_step(self, batch, batch_idx):
-        yhat = self(batch.x)
+        yhat = self(batch)
         loss = self.Loss(yhat, batch)
         self.log('train_loss', loss)
         if self.zeroparams is not None:
@@ -34,19 +34,11 @@ class Model(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        yhat = self(batch.x)
+        yhat = self(batch)
         loss = self.Loss(yhat, batch)
-        if self.model.out_channels == 1:
-            if self.model.readout_activation is None:
-                preds = torch.sigmoid(yhat.view(-1,1))>.5
-            else:
-                preds = yhat.view(-1,1)>.5
-            y = y.view(-1,1)
-        else:
-            preds = torch.argmax(yhat, dim=1)
-        acc = accuracy(preds, y)
+        #acc = accuracy(preds, y)
         # Calling self.log will surface up scalars for you in TensorBoard
-        metrics = {'val_loss': loss, 'val_acc': acc}
+        metrics = {'val_loss': loss} #, 'val_acc': acc}
         self.log_dict(metrics, prog_bar=True, logger=True,
                       on_epoch=True, on_step=False)
         try:
@@ -57,13 +49,13 @@ class Model(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         val_loss_mean = 0
-        val_acc_mean = 0
+        #val_acc_mean = 0
         for output in outputs:
             val_loss_mean += output['val_loss']
-            val_acc_mean += output['val_acc']
+            #val_acc_mean += output['val_acc']
         val_loss_mean /= len(outputs)
-        val_acc_mean /= len(outputs)
-        metrics = {'val_loss': val_loss_mean, 'val_acc': val_acc_mean}
+        #val_acc_mean /= len(outputs)
+        metrics = {'val_loss': val_loss_mean}#, 'val_acc': val_acc_mean}
 
         if self.zeroparams is not None:
             metrics["zero_params"] = sum([torch.sum(abs(g)<self.zeroparams)  for g in self.model.parameters()])
@@ -76,7 +68,7 @@ class Model(pl.LightningModule):
         return self.validation_step(batch, batch_idx)
 
     def configure_optimizers(self,learning_rate=1e-3):
-        if self.optim != "adam":
+        if self.optim is not None:
             optimizer = self.optim
             for g in optimizer.param_groups:
                 g["lr"] = learning_rate
