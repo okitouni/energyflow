@@ -51,8 +51,8 @@ class EFNtoGlobal(EFN):
 class EFNHybrid(Module):
     def __init__(self, local_nn, global_nn):
         super(EFNHybrid, self).__init__()
-        self.local_nn = EFNtoLocal(nn=local_nn).jittable()
-        self.global_nn = EFNtoGlobal(nn=global_nn).jittable()
+        self.local_nn = EFNtoLocal(nn=local_nn)
+        self.global_nn = EFNtoGlobal(nn=global_nn)
 
     def forward(self, data):
         scalars = self.global_nn(data)
