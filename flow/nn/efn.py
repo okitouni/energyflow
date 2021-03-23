@@ -21,13 +21,13 @@ class EFN(Module):
 # Implement no scalars
 # LocalQ2xextra2: Local netwrok uses Q2
 # globalwLIextra2: Global NN uses all LI and Local uses 2 extra only
-class EFNtoLocal(EFN):
-    def __init__(self, nn, extra_only=False):
+class EFNLocal(EFN):
+    def __init__(self, nn, scalars=False):
         super().__init__(nn)
-        self.extra_only = extra_only
+        self.use_scalars = scalars
 
     def forward(self, data: Union[Batch, Tensor], extra_scalars=None):
-        if not self.extra_only:
+        if not self.use_scalars:
             scalars = data.scalars
             scalars = scalars[:, [0, 1]]
         else:
@@ -40,21 +40,7 @@ class EFNtoLocal(EFN):
         return x
 
 
-def _reshape_scalars(scalars, data):
-    if len(scalars) > 1:
-        if type(data) != Batch:
-            raise ValueError(f'scalars has shape {scalars.shape} but no batch index was given.')
-        scalars = scalars[data.batch]
-    else:
-        scalars = scalars.view(1, -1).expand(data.x.shape[0], -1)
-    return scalars
-
-
-def _combine_feature_scalars(x, scalars):
-    return cat([x, scalars], dim=-1)
-
-
-class EFNtoGlobal(EFN):
+class EFNGlobal(EFN):
     def __init__(self, nn, use_scalars=False, phi=None):
         super().__init__(nn)
         self.use_scalars = use_scalars
@@ -84,10 +70,24 @@ class EFNtoGlobal(EFN):
 class EFNHybrid(Module):
     def __init__(self, local_nn, global_nn, extra_only=False, use_scalars=False, phi=None):
         super().__init__()
-        self.local_nn = EFNtoLocal(nn=local_nn, extra_only=extra_only)
-        self.global_nn = EFNtoGlobal(nn=global_nn, use_scalars=use_scalars, phi=phi)
+        self.local_nn = EFNLocal(nn=local_nn, scalars=extra_only)
+        self.global_nn = EFNGlobal(nn=global_nn, use_scalars=use_scalars, phi=phi)
 
     def forward(self, data):
         scalars = self.global_nn(data)
         w_i = self.local_nn(data, extra_scalars=scalars)
         return w_i
+
+
+def _reshape_scalars(scalars, data):
+    if len(scalars) > 1:
+        if type(data) != Batch:
+            raise ValueError(f'scalars has shape {scalars.shape} but no batch index was given.')
+        scalars = scalars[data.batch]
+    else:
+        scalars = scalars.view(1, -1).expand(data.x.shape[0], -1)
+    return scalars
+
+
+def _combine_feature_scalars(x, scalars):
+    return cat([x, scalars], dim=-1)

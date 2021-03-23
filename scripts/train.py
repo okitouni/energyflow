@@ -1,7 +1,7 @@
 import os
 from flow.utils import readme, mkdir, Logger, ProgressBar
 from flow.utils.data.processing import get_loaders
-from flow import LightningModel, PTLoss, EFNHybrid
+from flow import LightningModel, PTLoss, EFNHybrid, EFNLocal
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
@@ -17,7 +17,7 @@ def train(seed=None, hidden_channels=128, note=None, logdir="./lightning_logs/se
     train_loader, val_loader = get_loaders(data_dir, seed=seed, val_split=val_split, n_data=n_data,
                                            shuffle=shuffle, batch_size=batch_size, num_workers=num_workers)
 
-    nn = torch.nn.Sequential(torch.nn.Linear(3 + 4, hidden_channels),
+    nn = torch.nn.Sequential(torch.nn.Linear(3, hidden_channels),
                              torch.nn.ReLU(),
                              torch.nn.BatchNorm1d(hidden_channels),
                              torch.nn.Linear(hidden_channels, hidden_channels),
@@ -30,20 +30,22 @@ def train(seed=None, hidden_channels=128, note=None, logdir="./lightning_logs/se
                              torch.nn.Linear(hidden_channels, 1),
                              torch.nn.Sigmoid())
 
-    nn2 = torch.nn.Sequential(torch.nn.Linear(3, hidden_channels),
-                              torch.nn.ReLU(),
-                              torch.nn.BatchNorm1d(hidden_channels),
-                              torch.nn.Linear(hidden_channels, hidden_channels),
-                              torch.nn.ReLU(),
-                              torch.nn.Linear(hidden_channels, hidden_channels),
-                              torch.nn.ReLU(),
-                              torch.nn.Linear(hidden_channels, hidden_channels),
-                              torch.nn.ReLU(),
-                              torch.nn.Dropout(0.5),
-                              torch.nn.Linear(hidden_channels, 1),
-                              torch.nn.Sigmoid())
+    # nn2 = torch.nn.Sequential(torch.nn.Linear(3, hidden_channels),
+    #                           torch.nn.ReLU(),
+    #                           torch.nn.BatchNorm1d(hidden_channels),
+    #                           torch.nn.Linear(hidden_channels, hidden_channels),
+    #                           torch.nn.ReLU(),
+    #                           torch.nn.Linear(hidden_channels, hidden_channels),
+    #                           torch.nn.ReLU(),
+    #                           torch.nn.Linear(hidden_channels, hidden_channels),
+    #                           torch.nn.ReLU(),
+    #                           torch.nn.Dropout(0.5),
+    #                           torch.nn.Linear(hidden_channels, 1),
+    #                           torch.nn.Sigmoid())
 
-    efn = EFNHybrid(local_nn=nn, global_nn=nn2)
+    # efn = EFNHybrid(local_nn=nn, global_nn=nn2)
+
+    efn = EFNLocal(nn=nn, scalars=False)
 
     optim = torch.optim.Adam(efn.parameters(), weight_decay=0, lr=1e-5)
     module = LightningModel(efn, optim=optim,

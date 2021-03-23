@@ -1,5 +1,13 @@
-seed:
+#general:
+seed: 0
 hidden_channels: 128
-note:
-logdir: "./lightning_logs/segmentation"
+note: None
+logdir: "./lightning_logs/test"
 name: 'experiment'
+#data_loader:
+shuffle: True
+val_split: 0.25
+n_data: 100
+num_workers: 12
+data_dir: './data/EIC'
+batch_size: 32
