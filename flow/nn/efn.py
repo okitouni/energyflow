@@ -14,28 +14,59 @@ class EFN(Module):
         self.ptconv = PTConv(nn=nn, aggr='add').jittable()
 
 
+# TODO
+# Test 1,2,3,5 output global EFN
+# Compare against no scalars
+# Compare with scalars only.
+# Implement no scalars
+# LocalQ2xextra2: Local netwrok uses Q2
+# globalwLIextra2: Global NN uses all LI and Local uses 2 extra only
 class EFNtoLocal(EFN):
+    def __init__(self, nn, extra_only=False):
+        super().__init__(nn)
+        self.extra_only = extra_only
+
     def forward(self, data: Union[Batch, Tensor], extra_scalars=None):
-        x = data.x
-        scalars = data.scalars
-        edge_index = data.edge_index
+        if not self.extra_only:
+            scalars = data.scalars
+            scalars = scalars[:, [0, 1]]
+        else:
+            scalars = Tensor([]).to(data.x.device)
         if extra_scalars is not None:
             scalars = cat([scalars, extra_scalars], dim=-1)
-        if len(scalars) > 1:
-            if type(data) != Batch:
-                raise ValueError(f'scalars has shape {scalars.shape} but no batch index was given.')
-            scalars = scalars[data.batch]
-        else:
-            scalars = scalars.view(1, -1).expand(x.shape[0], -1)
-        x = cat([x, scalars], dim=1)
-        x = self.ptconv(x, edge_index)
+        scalars = _reshape_scalars(scalars, data)
+        x = _combine_feature_scalars(data.x, scalars)
+        x = self.ptconv(x, data.edge_index)
         return x
 
 
+def _reshape_scalars(scalars, data):
+    if len(scalars) > 1:
+        if type(data) != Batch:
+            raise ValueError(f'scalars has shape {scalars.shape} but no batch index was given.')
+        scalars = scalars[data.batch]
+    else:
+        scalars = scalars.view(1, -1).expand(data.x.shape[0], -1)
+    return scalars
+
+
+def _combine_feature_scalars(x, scalars):
+    return cat([x, scalars], dim=-1)
+
+
 class EFNtoGlobal(EFN):
+    def __init__(self, nn, use_scalars=False, phi=None):
+        super().__init__(nn)
+        self.use_scalars = use_scalars
+        self.phi = phi
+
     def forward(self, data):
         x = data.x
-        e = data.p[:, 0]
+        if self.use_scalars:
+            scalars = _reshape_scalars(data.scalars, data)
+            x = _combine_feature_scalars(x, scalars)
+
+        e = data.p[:, 0].view(-1, 1)
         edge_index = data.edge_index
         if type(data) == Batch:
             batch = data.batch
@@ -45,14 +76,16 @@ class EFNtoGlobal(EFN):
         x = self.ptconv(x, edge_index)
         x = e * x
         x = global_add_pool(x, batch)
+        if self.phi is not None:
+            x = self.phi(x)
         return x
 
 
 class EFNHybrid(Module):
-    def __init__(self, local_nn, global_nn):
-        super(EFNHybrid, self).__init__()
-        self.local_nn = EFNtoLocal(nn=local_nn)
-        self.global_nn = EFNtoGlobal(nn=global_nn)
+    def __init__(self, local_nn, global_nn, extra_only=False, use_scalars=False, phi=None):
+        super().__init__()
+        self.local_nn = EFNtoLocal(nn=local_nn, extra_only=extra_only)
+        self.global_nn = EFNtoGlobal(nn=global_nn, use_scalars=use_scalars, phi=phi)
 
     def forward(self, data):
         scalars = self.global_nn(data)

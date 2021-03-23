@@ -1,0 +1,5 @@
+seed:
+hidden_channels: 128
+note:
+logdir: "./lightning_logs/segmentation"
+name: 'experiment'
