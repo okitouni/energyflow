@@ -1,8 +1,8 @@
 import torch
-from torch_geometric.data import InMemoryDataset
-from flow.utils.data.processing import _process
+from torch_geometric.data import InMemoryDataset, Data
 from pandas import read_hdf
 from os.path import join
+from torch_geometric.utils import dense_to_sparse
 
 
 class EICdata(InMemoryDataset):
@@ -39,3 +39,19 @@ class EICdata(InMemoryDataset):
         torch.save((data, slices), self.processed_paths[0])
 
     __all__ = ['EICdata']
+
+
+def _process(df, target, scalars):
+    vec4 = df[df['STATUS'] > 0][["E", "px", "py", "pz"]].iloc[1:].values
+    x = vec4[:, 1:] / vec4[:, 0].reshape(-1, 1)
+    x = torch.from_numpy(x).float()
+    y = torch.from_numpy(target).float().view(1, 4)
+    edge_index = dense_to_sparse(torch.eye(x.shape[0]))[0]  # self only
+    data = Data(x=x, y=y, edge_index=edge_index)
+    data.p = torch.from_numpy(vec4).float()
+    data.scalars = torch.Tensor(scalars).float().view(1, 4)
+    return data
+
+
+def _trim_df(df, index):
+    return df[(df['STATUS'] > 0) & (df['EVENT'] == index)].iloc[1:]

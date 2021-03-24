@@ -7,14 +7,16 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
 
 
-def train(seed=None, hidden_channels=128, note=None, logdir="./lightning_logs/segmentation", name='experiment',
-          shuffle=True, val_split=0.25, n_data=None, num_workers=12, data_dir='./data/EIC', batch_size=32):
+def train(root, seed=None, hidden_channels=128, note=None, logdir="./lightning_logs/segmentation", name='experiment',
+          shuffle=True, val_split=0.25, n_data=None, num_workers=12, batch_size=32):
+    from flow.utils.data.dataset import EICdata
+    dataset = EICdata(root=root)
 
     if seed is not None:
         torch.manual_seed(seed)
         pl.seed_everything(seed)
 
-    train_loader, val_loader = get_loaders(data_dir, seed=seed, val_split=val_split, n_data=n_data,
+    train_loader, val_loader = get_loaders(dataset, seed=seed, val_split=val_split, n_data=n_data,
                                            shuffle=shuffle, batch_size=batch_size, num_workers=num_workers)
 
     nn = torch.nn.Sequential(torch.nn.Linear(3, hidden_channels),
