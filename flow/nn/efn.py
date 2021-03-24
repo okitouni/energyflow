@@ -22,14 +22,14 @@ class EFN(Module):
 # LocalQ2xextra2: Local netwrok uses Q2
 # globalwLIextra2: Global NN uses all LI and Local uses 2 extra only
 class EFNLocal(EFN):
-    def __init__(self, nn, scalars=False):
+    def __init__(self, nn, use_scalars=False):
         super().__init__(nn)
-        self.use_scalars = scalars
+        self.use_scalars = use_scalars
 
     def forward(self, data: Union[Batch, Tensor], extra_scalars=None):
-        if not self.use_scalars:
+        if self.use_scalars:
             scalars = data.scalars
-            scalars = scalars[:, [0, 1]]
+            #scalars = scalars[:, [0, 1]]
         else:
             scalars = Tensor([]).to(data.x.device)
         if extra_scalars is not None:
@@ -70,7 +70,7 @@ class EFNGlobal(EFN):
 class EFNHybrid(Module):
     def __init__(self, local_nn, global_nn, extra_only=False, use_scalars=False, phi=None):
         super().__init__()
-        self.local_nn = EFNLocal(nn=local_nn, scalars=extra_only)
+        self.local_nn = EFNLocal(nn=local_nn, use_scalars=extra_only)
         self.global_nn = EFNGlobal(nn=global_nn, use_scalars=use_scalars, phi=phi)
 
     def forward(self, data):

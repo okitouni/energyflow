@@ -7,7 +7,8 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
 
 
-def train(root, seed=None, hidden_channels=128, note=None, logdir="./lightning_logs/segmentation", name='experiment',
+def train(root, seed=None, hidden_channels=128, note=None, logdir="./lightning_logs/segmentation",
+          name='experiment', epochs=100,
           shuffle=True, val_split=0.25, n_data=None, num_workers=12, batch_size=32):
     from flow.utils.data.dataset import EICdata
     dataset = EICdata(root=root)
@@ -47,7 +48,7 @@ def train(root, seed=None, hidden_channels=128, note=None, logdir="./lightning_l
 
     # efn = EFNHybrid(local_nn=nn, global_nn=nn2)
 
-    efn = EFNLocal(nn=nn, scalars=False)
+    efn = EFNLocal(nn=nn, use_scalars=False)
 
     optim = torch.optim.Adam(efn.parameters(), weight_decay=0, lr=1e-5)
     module = LightningModel(efn, optim=optim,
@@ -60,7 +61,7 @@ def train(root, seed=None, hidden_channels=128, note=None, logdir="./lightning_l
     checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path, filename="weights.cpkt", save_top_k=1,
                                           monitor='val_loss', mode='min')
     bar = ProgressBar()
-    trainer = pl.Trainer(logger=log, gpus=1, max_epochs=200, progress_bar_refresh_rate=1,
+    trainer = pl.Trainer(logger=log, gpus=1, max_epochs=epochs, progress_bar_refresh_rate=1,
                          callbacks=[bar, checkpoint_callback])
     trainer.fit(module, train_dataloader=train_loader, val_dataloaders=val_loader)
 
