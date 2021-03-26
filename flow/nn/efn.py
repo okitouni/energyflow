@@ -1,10 +1,9 @@
 # noinspection PyProtectedMember
 from torch_geometric.nn import global_add_pool
 from torch.nn import Module
-from torch import cat, zeros
+from torch import cat, zeros, Tensor, sigmoid
 from .ptconv import PTConv
 from torch_geometric.data.batch import Batch
-from torch import Tensor
 from typing import Union
 
 
@@ -57,7 +56,7 @@ class EFNGlobal(EFN):
         if type(data) == Batch:
             batch = data.batch
         else:
-            batch = zeros(len(x)).to(x.device)
+            batch = zeros(len(x)).long().to(x.device)
 
         x = self.ptconv(x, edge_index)
         x = e * x
@@ -68,10 +67,10 @@ class EFNGlobal(EFN):
 
 
 class EFNHybrid(Module):
-    def __init__(self, local_nn, global_nn, extra_only=False, use_scalars=False, phi=None):
+    def __init__(self, local_nn, global_nn, local_use_scalars=False, global_use_scalars=False, phi=None):
         super().__init__()
-        self.local_nn = EFNLocal(nn=local_nn, use_scalars=extra_only)
-        self.global_nn = EFNGlobal(nn=global_nn, use_scalars=use_scalars, phi=phi)
+        self.local_nn = EFNLocal(nn=local_nn, use_scalars=local_use_scalars)
+        self.global_nn = EFNGlobal(nn=global_nn, use_scalars=global_use_scalars, phi=phi)
 
     def forward(self, data):
         scalars = self.global_nn(data)

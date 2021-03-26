@@ -1,13 +1,28 @@
 #general:
 seed: 0
-hidden_channels: 128
-epochs: 50
-note: None
+hidden_channels: 64
+epochs: 100
+lr: 0.0005
+note:
+logging: True
 logdir: "./lightning_logs/test"
-name: 'experiment'
+name: 'fsr/local'
+use_scalars: False
+loss: 'MSE'
+#model
+hybrid: False
+global_scalars: 2
 #data_loader:
 shuffle: True
-val_split: 0.25
-n_data: 1000
+val_split: 0.1
+n_data: 5000
 num_workers: 12
 batch_size: 32
+#MLP:
+mlp_kwargs:
+  #input_dim: 5
+  dropout: .206
+  output_dims: [113,90,92,90,105]
+  out: 1
+  batch_norm_layer: 0
+  sigmoid: True
