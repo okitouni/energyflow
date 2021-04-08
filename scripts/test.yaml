@@ -6,12 +6,12 @@ lr: 0.0005
 note:
 logging: True
 logdir: "./lightning_logs/test"
-name: 'fsr/local'
+name: 'no_qed/hybrid4'
 use_scalars: False
 loss: 'MSE'
 #model
-hybrid: False
-global_scalars: 2
+hybrid: True
+global_scalars: 4
 #data_loader:
 shuffle: True
 val_split: 0.1

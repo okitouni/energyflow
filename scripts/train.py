@@ -1,7 +1,5 @@
 import os
-
-from flow.nn.define_model import define_model
-from flow.utils import readme, mkdir, Logger, ProgressBar
+from flow.utils import readme, mkdir, Logger, ProgressBar, define_model
 from flow.utils.data.processing import get_loaders
 from flow import LightningModel
 from flow.nn.losses import PTLoss
