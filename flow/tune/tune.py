@@ -9,7 +9,7 @@ from flow import LightningModel, PTLoss
 import pytorch_lightning as pl
 import logging
 
-from flow.nn.define_model import define_model
+from flow.utils.define_model import define_model
 
 PERCENT_VALID_EXAMPLES = 0.25
 BATCHSIZE = 128
@@ -17,7 +17,7 @@ NDATA = 5000
 EPOCHS = 10
 SEED = 0
 DIR = os.getcwd()
-HYBRID = False
+HYBRID = True
 GLOBAL_SCALARS = 2
 USE_SCALARS = False
 SIGMOID = True

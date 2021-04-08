@@ -28,6 +28,7 @@ class EICdata(InMemoryDataset):
         events_breit = read_hdf(join(self.raw_dir, 'breit.h5'), key=f'data')
         targets = read_hdf(join(self.raw_dir, 'targets_breit.h5'), key='data').values
         scalars = read_hdf(join(self.raw_dir, 'scalars.h5'), key='data').values
+        events_breit = _trim_df(events_breit)
         data_list = [_process(events_breit[events_breit['EVENT'] == i], y, z) for i, y, z in
                      zip(range(len(targets)), targets, scalars)]
 
@@ -44,7 +45,7 @@ class EICdata(InMemoryDataset):
 
 
 def _process(df, target, scalars):
-    vec4 = df[df['STATUS'] > 0][["E", "px", "py", "pz"]].iloc[1:].values
+    vec4 = df[["E", "px", "py", "pz"]].values
     x = vec4[:, 1:] / vec4[:, 0].reshape(-1, 1)
     x = torch.from_numpy(x).float()
     y = torch.from_numpy(target).float().view(1, 4)
@@ -56,12 +57,15 @@ def _process(df, target, scalars):
 
 
 def _trim_df(df, index=None):
+    cond = (df['STATUS'] > 0) & (df['STATUS'] != 44) & (df['STATUS'] != 23)
     if index is None:
         # need to remove outgoing hard scattering electron
         # mask_first = df.groupby(['EVENT'])['EVENT'].transform(_mask_first).astype(bool)
         # return df[(df['STATUS'] > 0)].groupby(['EVENT']).apply(lambda x: x[1:])
-        return df[(df['STATUS'] > 0) & (df['STATUS'] != 44) & (df['N'] != 6)]
-    return df[(df['STATUS'] > 0) & (df['EVENT'] == index)].iloc[1:]
+        # 44 : outgoing shifted by a branching to remove electrons.
+        # 23: outgoing to remove outgoing electrons.
+        return df[cond]
+    return df[(df['EVENT'] == index) & cond]
 
 # def _mask_first(x):
 #     result = np.ones_like(x)

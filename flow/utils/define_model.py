@@ -31,6 +31,7 @@ def define_model(global_scalars, hidden_channels, hybrid, mlp_kwargs, use_scalar
 
         efn = EFNHybrid(local_nn=nn, global_nn=nn2, local_use_scalars=use_scalars, phi=phi)
     else:
-        nn = MLP(3, **mlp_kwargs)
+        inputs = 7 if use_scalars else 3
+        nn = MLP(inputs, **mlp_kwargs)
         efn = EFNLocal(nn=nn, use_scalars=use_scalars)
     return efn
